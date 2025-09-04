@@ -14,7 +14,7 @@ Dependencies:
 """
 
 import sys, json, os, glob
-from typing import Any, Dict
+from typing import Any
 from decimal import Decimal, ROUND_HALF_UP
 from config import XML_PATH, LOGO_PATH, OUTPUT_PDF, DEFAULT_QR_SIZE, DEFAULT_TOP_BAR_HEIGHT
 from fel_pdf import readFelXml, generatePdf
@@ -23,7 +23,7 @@ from fel_pdf import readFelXml, generatePdf
 # ---------------------------
 # JSON-RPC / MCP primitives
 # ---------------------------
-def sendResponse(msgId: Any, result: Any = None, error: Dict[str, Any] | None = None) -> None:
+def sendResponse(msgId: Any, result: Any = None, error: dict[str, Any] | None = None) -> None:
     """Write a single JSON-RPC response to STDOUT."""
     payload = {"jsonrpc": "2.0", "id": msgId}
     if error is not None:
@@ -34,7 +34,7 @@ def sendResponse(msgId: Any, result: Any = None, error: Dict[str, Any] | None = 
     sys.stdout.flush()
 
 
-def getCapabilities() -> Dict[str, Any]:
+def getCapabilities() -> dict[str, Any]:
     """Return minimal MCP capabilities (tools only)."""
     return {
         "protocolVersion": "2024-11-05",
@@ -43,7 +43,7 @@ def getCapabilities() -> Dict[str, Any]:
     }
 
 
-def listTools() -> Dict[str, Any]:
+def listTools() -> dict[str, Any]:
     """Describe available tools and their JSON Schemas."""
     return {
         "tools": [
@@ -94,7 +94,7 @@ def parseMoney(value: Any) -> Decimal:
     return Decimal(str(value).replace(",", ""))
 
 
-def validateFel(xmlPath: str) -> Dict[str, Any]:
+def validateFel(xmlPath: str) -> dict[str, Any]:
     """
     Validate a FEL XML:
       - Check VAT (12%) consistency and total = subtotal + VAT
@@ -127,7 +127,7 @@ def validateFel(xmlPath: str) -> Dict[str, Any]:
     }
 
 
-def renderFel(xmlPath: str, logoPath: str | None, theme: str | None, outPath: str | None) -> Dict[str, Any]:
+def renderFel(xmlPath: str, logoPath: str | None, theme: str | None, outPath: str | None) -> dict[str, Any]:
     """
     Render a branded PDF from a FEL XML using ReportLab.
     Uses defaults from config.py when arguments are None.
@@ -145,7 +145,7 @@ def renderFel(xmlPath: str, logoPath: str | None, theme: str | None, outPath: st
     return {"ok": True, "pdf_path": out}
 
 
-def batchFel(dirXml: str, outDir: str | None) -> Dict[str, Any]:
+def batchFel(dirXml: str, outDir: str | None) -> dict[str, Any]:
     """
     Render all *.xml inside dirXml to PDFs, write a manifest.json with results.
     Returns: { ok, count, out_dir, manifest_path }
@@ -172,7 +172,7 @@ def batchFel(dirXml: str, outDir: str | None) -> Dict[str, Any]:
     return {"ok": True, "count": len(manifest), "out_dir": outDir, "manifest_path": manifestPath}
 
 
-def callTool(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+def callTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     """Dispatch a tools/call to the correct FEL operation."""
     if name == "fel_validate":
         return validateFel(args["xml_path"])
