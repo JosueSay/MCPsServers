@@ -23,7 +23,6 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER
 
-# <<< NEW: central config >>>
 from config import (
     ORANGE, DARK_GRAY, BLACK, WHITE, GRAY_LIGHT, GRAY_SOFT,
     DEFAULT_QR_SIZE, DEFAULT_TOP_BAR_HEIGHT,
