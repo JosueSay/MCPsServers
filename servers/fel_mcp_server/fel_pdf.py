@@ -4,15 +4,10 @@ FEL -> Branded PDF renderer (ReportLab)
 - Validates totals (subtotal, VAT 12%, total)
 - Composes a branded PDF (logo, fonts, colors)
 - Builds SAT verification URL/QR
-
-Environment-driven configuration via .env:
-- FEL_XML_PATH, FEL_LOGO_PATH, FEL_OUTPUT_PDF
-- FEL_ACTIVE_FONT, FEL_FONT_DIR_MONTSERRAT, FEL_FONT_DIR_ROBOTOMONO
-- FEL_THEME, FEL_QR_SIZE, FEL_TOP_BAR_HEIGHT
-- FEL_WEBSITE, FEL_PHONE, FEL_EMAIL
 """
 
 import os
+import sys
 import xml.etree.ElementTree as ET
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image, Spacer, Paragraph
@@ -483,7 +478,7 @@ def generatePdf(
         drawBottomBar(c, d)
 
     doc.build(flow, onFirstPage=drawBars)
-    print(f"✅ PDF generated: {outputPdf}")
+    sys.stderr.write(f"PDF generated: {outputPdf}\n")
 
 
 if __name__ == "__main__":
