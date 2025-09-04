@@ -1,7 +1,7 @@
 import json
 from typing import Any
 from anthropic import Anthropic
-from mcp_stdio import McpStdioClient, parseTextBlock
+from .mcp_stdio import McpStdioClient, parseTextBlock
 
 
 def usageDict(resp: Any) -> dict[str, int]:
