@@ -19,8 +19,7 @@ McpServers/
 ├─ servers/
 │  └─ fel_mcp_server/
 │     ├─ server.py          # Local MCP server (FEL→PDF/validation/batch)
-│     ├─ fel_pdf.py         # Reuses your ReportLab/XML logic
-│     └─ sat_qr.py          # URL/QR code builder
+│     └─ fel_pdf.py         # Reuses your ReportLab/XML logic
 ├─ mcp_clients/
 │  ├─ filesystem.json       # Official MCP client config: filesystem
 │  └─ git.json              # Official MCP client config: git
