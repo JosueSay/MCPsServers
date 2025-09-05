@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 class McpStdioClient:
     """
-    Minimal JSON-RPC (line-delimited) client for an MCP server over stdio.
+    JSON-RPC (line-delimited) client for an MCP server over stdio.
 
     Responsibilities
     ---------------

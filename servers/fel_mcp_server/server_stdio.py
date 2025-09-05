@@ -1,5 +1,5 @@
 """
-Minimal MCP server over stdio (no SDK).
+MCP server over stdio (no SDK).
 Implements:
   - initialize
   - tools/list

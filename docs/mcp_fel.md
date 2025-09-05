@@ -1,27 +1,27 @@
-# MCP (Model Context Protocol) - Server FEL
+# MCP (Model Context Protocol) - FEL Server
 
-Este documento describe cómo funciona el servidor MCP sin SDK (STDIN/STDOUT + JSON-RPC 2.0), su flujo de ejecución, parámetros de herramientas, retornos y cómo probarlo desde terminal. La referencia conceptual se basa en la arquitectura MCP pública de Anthropic y guías introductorias.
+This document describes how the MCP server works without an SDK (STDIN/STDOUT + JSON-RPC 2.0), its execution flow, tool parameters, return values, and how to test it from the terminal. The conceptual reference is based on Anthropic’s public MCP architecture and introductory guides.
 
-## 1. Qué es MCP en este contexto
+## 1. What MCP Is in This Context
 
-* **Server (proveedor de capacidades)**: tu proceso `server_stdio.py`, que expone herramientas (`fel_validate`, `fel_render`, `fel_batch`) mediante **JSON-RPC 2.0** sobre STDIN/STDOUT.
-* **Host / Cliente**: el proceso que inicia el server y envía llamadas MCP (por ejemplo, un chatbot de consola o un `printf` en terminal).
-* **Mensajes clave**:
+* **Server (capability provider)**: your `server_stdio.py` process, which exposes tools (`fel_validate`, `fel_render`, `fel_batch`) via **JSON-RPC 2.0** over STDIN/STDOUT.
+* **Host / Client**: the process that launches the server and sends MCP calls (e.g., a console chatbot or a terminal `printf`).
+* **Key messages**:
 
-  * `initialize` -> handshake y declaración de capacidades.
-  * `tools/list` -> listado de herramientas disponibles.
-  * `tools/call` -> invocación de una herramienta con sus `arguments`.
+  * `initialize` -> handshake and capability declaration.
+  * `tools/list` -> list available tools.
+  * `tools/call` -> invoke a tool with its `arguments`.
 
-## 2. Diagrama (Mermaid)
+## 2. Diagram (Mermaid)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Host as Host/Cliente (Chat CLI)
+    participant Host as Host/Client (Chat CLI)
     participant Server as MCP Server (server_stdio.py)
     participant FEL as FEL Logic (config.py/fel_pdf.py)
 
-    Note over Host,Server: Canal de transporte: STDIN/STDOUT (un mensaje JSON por línea)
+    Note over Host,Server: Transport: STDIN/STDOUT (one JSON message per line)
 
     Host->>Server: initialize { jsonrpc:"2.0", id:1, method:"initialize", params:{} }
     Server-->>Host: result { protocolVersion, serverInfo, capabilities }
@@ -31,29 +31,29 @@ sequenceDiagram
 
     Host->>Server: tools/call { id:3, method:"tools/call", params:{ name:"fel_validate", arguments:{ xml_path:"data/xml/factura.xml" } } }
     Server->>FEL: readFelXml(xmlPath)
-    FEL-->>Server: datos FEL + totales
+    FEL-->>Server: FEL data + totals
     Server-->>Host: result { content:[{ type:"text", text:"{ ok, issues, totals }" }] }
 
     Host->>Server: tools/call { id:4, name:"fel_render", arguments:{ xml_path, logo_path?, theme?, out_path? } }
     Server->>FEL: generatePdf(xmlPath, logoPath, outputPdf, ... )
-    FEL-->>Server: PDF generado
+    FEL-->>Server: PDF generated
     Server-->>Host: result { content:[{ type:"text", text:"{ ok:true, pdf_path }" }] }
 
     Host->>Server: tools/call { id:5, name:"fel_batch", arguments:{ dir_xml, out_dir? } }
-    Server->>FEL: generatePdf() por cada XML + manifest.json
-    FEL-->>Server: conteo + rutas
+    Server->>FEL: generatePdf() per XML + manifest.json
+    FEL-->>Server: count + paths
     Server-->>Host: result { content:[{ type:"text", text:"{ ok, count, out_dir, manifest_path }" }] }
 ```
 
-## 3. API de herramientas
+## 3. Tool API
 
 ### 3.1 `fel_validate`
 
-* **Descripción**: Valida un XML FEL, audita **IVA 12 %** y **total = subtotal + IVA**, y verifica campos obligatorios.
+* **Description**: Validates an FEL XML, audits **12% VAT** and checks **total = subtotal + VAT**, and verifies required fields.
 * **Input (`arguments`)**:
 
-  * `xml_path` (string, requerido): ruta al XML FEL.
-* **Return (`result.content[0].text`)**: JSON como texto:
+  * `xml_path` (string, required): path to the FEL XML.
+* **Return (`result.content[0].text`)**: JSON as text:
 
 ```json
 {
@@ -63,19 +63,19 @@ sequenceDiagram
 }
 ```
 
-* `ok` (bool): `true` si no hay inconsistencias.
-* `issues` (string\[]): lista de inconsistencias detectadas.
-* `totals` (strings): valores monetarios formateados con dos decimales.
+* `ok` (bool): `true` if no inconsistencies are found.
+* `issues` (string\[]): list of detected issues.
+* `totals` (strings): monetary values formatted with two decimals.
 
 ### 3.2 `fel_render`
 
-* **Descripción**: Genera un **PDF con marca** (logo, tipografías, colores) a partir de un XML FEL.
+* **Description**: Generates a **branded PDF** (logo, fonts, colors) from an FEL XML.
 * **Input (`arguments`)**:
 
-  * `xml_path` (string, requerido): ruta al XML FEL.
-  * `logo_path` (string|null, opcional): ruta a un logo; si `null`, se usa `LOGO_PATH` por defecto.
-  * `theme` (string|null, opcional): reservado para configuraciones futuras.
-  * `out_path` (string|null, opcional): ruta de salida del PDF; si `null`, se usa `OUTPUT_PDF` por defecto.
+  * `xml_path` (string, required): FEL XML path.
+  * `logo_path` (string|null, optional): path to a logo; if `null`, uses `LOGO_PATH` by default.
+  * `theme` (string|null, optional): reserved for future styles.
+  * `out_path` (string|null, optional): PDF output path; if `null`, uses `OUTPUT_PDF` by default.
 * **Return**:
 
 ```json
@@ -84,58 +84,58 @@ sequenceDiagram
 
 ### 3.3 `fel_batch`
 
-* **Descripción**: Procesa un directorio de XML FEL, genera un PDF por archivo y crea un `manifest.json`.
+* **Description**: Processes a directory of FEL XMLs, generates a PDF per file, and creates a `manifest.json`.
 * **Input**:
 
-  * `dir_xml` (string, requerido): directorio con archivos `*.xml`.
-  * `out_dir` (string|null, opcional): directorio de salida (por defecto `data/out`).
+  * `dir_xml` (string, required): directory containing `*.xml` files.
+  * `out_dir` (string|null, optional): output directory (default `data/out`).
 * **Return**:
 
 ```json
 { "ok": true, "count": 5, "out_dir": "data/out", "manifest_path": "data/out/manifest.json" }
 ```
 
-## 4. Contrato MCP implementado
+## 4. MCP Contract Implemented
 
-* **Transporte**: STDIN/STDOUT, un mensaje JSON por línea.
-* **Esquema JSON-RPC**: cada solicitud incluye `jsonrpc:"2.0"`, `id`, `method` y `params?`.
-* **Métodos soportados**:
+* **Transport**: STDIN/STDOUT, one JSON message per line.
+* **JSON-RPC schema**: each request includes `jsonrpc:"2.0"`, `id`, `method`, and optional `params`.
+* **Supported methods**:
 
-  * `initialize` -> devuelve `{ protocolVersion, serverInfo, capabilities }`.
-  * `tools/list` -> devuelve `{ tools:[...] }` con `name`, `description` e `inputSchema` (JSON Schema).
-  * `tools/call` -> recibe `{ name, arguments }`, ejecuta la herramienta y responde con `{ result: { content:[...] } }`.
-* **Errores**: formato JSON-RPC estándar:
+  * `initialize` -> returns `{ protocolVersion, serverInfo, capabilities }`.
+  * `tools/list` -> returns `{ tools:[...] }` with `name`, `description`, and `inputSchema` (JSON Schema).
+  * `tools/call` -> receives `{ name, arguments }`, executes the tool, and responds with `{ result: { content:[...] } }`.
+* **Errors**: standard JSON-RPC format:
 
 ```json
 { "jsonrpc":"2.0", "id": <id>, "error": { "code": <int>, "message": "<desc>" } }
 ```
 
-## 5. Parámetros y environment
+## 5. Parameters and Environment
 
-El servidor utiliza `config.py`, que a su vez lee variables desde `.env`:
+The server uses `config.py`, which reads variables from `.env`:
 
-* **Entradas/Salidas**: `FEL_XML_PATH`, `FEL_LOGO_PATH`, `FEL_OUTPUT_PDF`.
-* **Fuentes/Temas**: `FEL_ACTIVE_FONT`, `FEL_FONT_DIR_MONTSERRAT`, `FEL_FONT_DIR_ROBOTOMONO`, `FEL_THEME`.
+* **Input/Output**: `FEL_XML_PATH`, `FEL_LOGO_PATH`, `FEL_OUTPUT_PDF`.
+* **Fonts/Themes**: `FEL_ACTIVE_FONT`, `FEL_FONT_DIR_MONTSERRAT`, `FEL_FONT_DIR_ROBOTOMONO`, `FEL_THEME`.
 * **Layout**: `FEL_QR_SIZE`, `FEL_TOP_BAR_HEIGHT`.
 * **Footer**: `FEL_WEBSITE`, `FEL_PHONE`, `FEL_EMAIL`.
 
-> En tiempo de ejecución, `fel_render` y `fel_batch` permiten rutas que sobrescriben los valores por defecto.
+> At runtime, `fel_render` and `fel_batch` allow paths that override the defaults.
 
-## 6. Flujo de ejecución
+## 6. Execution Flow
 
-1. **Inicio**: el Host lanza `server_stdio.py` como subproceso.
-2. **Handshake**: el Host envía `initialize`; el Server devuelve capacidades.
-3. **Descubrimiento**: el Host consulta `tools/list` para conocer herramientas y esquemas.
-4. **Invocación**: el Host llama `tools/call` con `{ name, arguments }`:
+1. **Startup**: the Host launches `server_stdio.py` as a subprocess.
+2. **Handshake**: Host sends `initialize`; Server returns capabilities.
+3. **Discovery**: Host calls `tools/list` to get tools and their schemas.
+4. **Invocation**: Host calls `tools/call` with `{ name, arguments }`:
 
-   * `fel_validate` -> extrae datos con `readFelXml()`, verifica IVA y totales, y retorna el diagnóstico.
-   * `fel_render` -> llama `generatePdf()` con rutas/tema y devuelve la ruta del PDF.
-   * `fel_batch` -> itera XMLs en `dir_xml`, genera PDFs y crea `manifest.json`.
-5. **Resultado**: el Server encapsula la respuesta en `result.content[0].text` (JSON como texto) y la envía al Host.
+   * `fel_validate` -> extracts data with `readFelXml()`, checks VAT and totals, returns diagnostics.
+   * `fel_render` -> calls `generatePdf()` with paths/theme, returns PDF path.
+   * `fel_batch` -> iterates XMLs in `dir_xml`, generates PDFs, creates `manifest.json`.
+5. **Result**: Server wraps the response in `result.content[0].text` (JSON as text) and sends it to Host.
 
-## 7. Ejemplos de llamadas (terminal)
+## 7. Example Calls (Terminal)
 
-### 7.1 Inicialización y listado de herramientas
+### 7.1 Initialization & Tool Listing
 
 ```bash
 printf '%s\n' \
@@ -144,7 +144,7 @@ printf '%s\n' \
 | python servers/fel_mcp_server/server_stdio.py
 ```
 
-### 7.2 Validación de XML
+### 7.2 XML Validation
 
 ```bash
 printf '%s\n' \
@@ -154,7 +154,7 @@ printf '%s\n' \
 | python servers/fel_mcp_server/server_stdio.py
 ```
 
-### 7.3 Render de PDF
+### 7.3 PDF Rendering
 
 ```bash
 printf '%s\n' \
@@ -164,7 +164,7 @@ printf '%s\n' \
 | python servers/fel_mcp_server/server_stdio.py
 ```
 
-### 7.4 Lote y manifest
+### 7.4 Batch & Manifest
 
 ```bash
 printf '%s\n' \
@@ -174,27 +174,25 @@ printf '%s\n' \
 | python servers/fel_mcp_server/server_stdio.py
 ```
 
-## 8. Consideraciones y buenas prácticas
+## 8. Considerations and Best Practices
 
-* **Formato monetario**: parseo con `Decimal`, eliminando comas e imponiendo dos decimales (`ROUND_HALF_UP`).
-* **Errores**:
+* **Monetary format**: parse with `Decimal`, remove commas, enforce two decimals (`ROUND_HALF_UP`).
+* **Errors**:
 
-  * Validar existencia de archivos (XML/Logo).
-  * Asegurar permisos de escritura en `out_dir`.
-  * Cualquier excepción se devuelve como `error` JSON-RPC.
-* **Escalabilidad**:
+  * Ensure files exist (XML/Logo).
+  * Check write permissions for `out_dir`.
+  * Any exception is returned as a JSON-RPC `error`.
+* **Scalability**:
 
-  * Se puede añadir soporte a `resources` o `prompts` si el Host lo requiere.
-  * Considerar cancelación si se gestionan tareas largas o streaming.
+  * Support for `resources` or `prompts` can be added if needed.
+  * Consider cancellation for long-running or streaming tasks.
 
-## 9. Estructura de archivos relevante
+## 9. Relevant File Structure
 
 ```bash
 servers/
 └─ fel_mcp_server/
-   ├─ server_stdio.py     # MCP Server sin SDK
-   ├─ config.py           # parámetros centralizados (lee .env)
+   ├─ server_stdio.py     # MCP Server without SDK
+   ├─ config.py           # centralized parameters (reads .env)
    └─ fel_pdf.py          # readFelXml(), generatePdf(), helpers
 ```
-
-*
