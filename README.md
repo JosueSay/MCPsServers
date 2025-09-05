@@ -149,3 +149,7 @@ These logs allow you to trace **tool usage**, **LLM decisions**, and **outputs**
 - [Anthropic API Docs](https://docs.anthropic.com/en/api)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [JSON-RPC 2.0](https://www.jsonrpc.org/)
+
+## 🎬 Test Example
+
+- [Watch video](https://youtu.be/RaGJxHGllNY)
