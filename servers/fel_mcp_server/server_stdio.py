@@ -4,13 +4,6 @@ Implements:
   - initialize
   - tools/list
   - tools/call for: { fel_validate, fel_render, fel_batch }
-
-This server bridges your FEL XML -> Branded PDF logic to the MCP protocol using JSON-RPC 2.0.
-It reads requests from STDIN and writes responses to STDOUT.
-
-Dependencies:
-  - Your existing modules: config.py, fel_pdf.py
-  - Python stdlib only for the MCP transport (no SDK)
 """
 
 import sys, json, os, glob

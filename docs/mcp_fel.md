@@ -4,8 +4,8 @@ This document describes how the MCP server works without an SDK (STDIN/STDOUT + 
 
 ## 1. What MCP Is in This Context
 
-* **Server (capability provider)**: your `server_stdio.py` process, which exposes tools (`fel_validate`, `fel_render`, `fel_batch`) via **JSON-RPC 2.0** over STDIN/STDOUT.
-* **Host / Client**: the process that launches the server and sends MCP calls (e.g., a console chatbot or a terminal `printf`).
+* **Server (capability provider)**: `server_stdio.py` process, which exposes tools (`fel_validate`, `fel_render`, `fel_batch`) via **JSON-RPC 2.0** over STDIN/STDOUT.
+* **Host / Client**: the process that launches the server and sends MCP calls.
 * **Key messages**:
 
   * `initialize` -> handshake and capability declaration.
