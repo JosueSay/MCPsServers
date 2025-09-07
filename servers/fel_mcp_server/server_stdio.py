@@ -70,11 +70,12 @@ def listTools() -> dict[str, Any]:
                     "type": "object",
                     "properties": {
                         "dir_xml": {"type": "string"},
-                        "out_dir": {"type": ["string", "null"]}
+                        "out_dir": {"type": "string"}
                     },
-                    "required": ["dir_xml"]
+                    "required": ["dir_xml", "out_dir"]
                 },
             }
+
         ]
     }
 
@@ -154,9 +155,10 @@ def batchFel(dirXml: str, outDir: str | None) -> dict[str, Any]:
     """
     if not isinstance(dirXml, str) or not dirXml.strip():
         raise ValueError("dir_xml must be a non-empty string")
+    if not isinstance(outDir, str) or not outDir.strip():
+        raise ValueError("out_dir must be a non-empty string")
 
-    target_out = outDir if (isinstance(outDir, str) and outDir.strip()) else BATCH_OUT_DIR
-    target_out = os.path.abspath(target_out)
+    target_out = os.path.abspath(outDir)
     os.makedirs(target_out, exist_ok=True)
 
     xml_pattern = os.path.join(dirXml, "*.xml")
@@ -167,7 +169,6 @@ def batchFel(dirXml: str, outDir: str | None) -> dict[str, Any]:
         pdf_path = os.path.join(
             target_out, os.path.splitext(os.path.basename(xml))[0] + ".pdf"
         )
-        
         generatePdf(
             xmlPath=os.path.abspath(xml),
             logoPath=LOGO_PATH,
@@ -181,12 +182,7 @@ def batchFel(dirXml: str, outDir: str | None) -> dict[str, Any]:
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-    return {
-        "ok": True,
-        "count": len(manifest),
-        "out_dir": target_out,
-        "manifest_path": manifest_path,
-    }
+    return {"ok": True, "count": len(manifest), "out_dir": target_out, "manifest_path": manifest_path}
 
 
 
@@ -197,7 +193,7 @@ def callTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     if name == "fel_render":
         return renderFel(args["xml_path"], args.get("logo_path"), args.get("theme"), args.get("out_path"))
     if name == "fel_batch":
-        return batchFel(args["dir_xml"], args.get("out_dir"))
+        return batchFel(args["dir_xml"], args["out_dir"])
     raise ValueError(f"Unknown tool {name}")
 
 

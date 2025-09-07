@@ -2,8 +2,17 @@
 
 This project implements a **console-based chatbot** that connects to **Anthropic Claude** via API and integrates with **Model Context Protocol (MCP)** servers.  
 The chatbot can **maintain conversational context**, automatically decide when to use tools, and log all interactions in structured JSONL files.  
+It includes a custom **FEL MCP server** that validates and renders **Guatemalan FEL electronic invoices** into branded PDFs.
 
-It includes integration with a custom **FEL MCP server** that validates and renders **Guatemalan FEL electronic invoices** into branded PDFs.
+> **Monorepo notice:** This repository consolidates two implemented codebases: the **chatbot (CLI/UI)** and the **local FEL MCP server**.  
+>
+> It also links to a third repository used **only as reference** for API connection patterns.
+
+## 🔗 Related repositories
+
+- [Chatbot (CLI / UI)](https://github.com/JosueSay/ChatBotMCP) — Implemented and unified in this monorepo.
+- [MCP FEL (Local)](https://github.com/JosueSay/MCPLocalFEL) — Implemented and unified in this monorepo.
+- [Reference: OpenAI Chat API Example](https://github.com/JosueSay/Selectivo_IA/blob/main/docs_assistant/README.md) — Reference only (used for connection patterns, instruction context).
 
 ## ✨ Features
 
@@ -146,10 +155,62 @@ These logs allow you to trace **tool usage**, **LLM decisions**, and **outputs**
 
 ## 📚 References
 
-- [Anthropic API Docs](https://docs.anthropic.com/en/api)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
+- [Anthropic API Docs](https://docs.anthropic.com/en/api)
+- [Antrhopic Build an MCP Server](https://modelcontextprotocol.io/quickstart/server)
 - [JSON-RPC 2.0](https://www.jsonrpc.org/)
+
+## 🖥️ Using with Claude Desktop + MCP
+
+You can also run the FEL server directly inside **Claude Desktop** via the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+
+### 1. Install Claude Desktop
+
+Download and install Claude from here:
+👉 [https://claude.ai/download](https://claude.ai/download)
+
+> ⚠️ Claude Desktop is available for **Windows/macOS**.
+>
+> Our FEL server was designed to run inside **WSL (Ubuntu)**.
+
+### 2. Configure MCP
+
+Open Claude Desktop and go to:
+**File -> Settings -> Developer -> Edit Config**
+
+This will open the configuration folder. Edit the file `claude_desktop_config.json` and add:
+
+```json
+{
+  "mcpServers": {
+    "FEL": {
+      "command": "wsl.exe",
+      "args": [
+        "-e",
+        "<absolute_path>/venv/bin/python",
+        "<absolute_path>/servers/fel_mcp_server/server_stdio.py"
+      ]
+    }
+  }
+}
+```
+
+🔑 **Note**:
+Replace `<absolute_path>` with the full absolute path inside WSL, e.g.:
+`/mnt/d/repositorios/UVG/2025/MCPsServers`
+
+### 3. Restart Claude Desktop
+
+After saving the config file, restart Claude Desktop from **PowerShell**:
+
+```powershell
+Stop-Process -Name "Claude" -Force; Start-Process "<absolute_path>\Claude.exe"
+```
+
+Here `<absolute_path>\Claude.exe` should be replaced with the full path to your Claude installation, for example:
+`C:\Users\<username>\AppData\Local\AnthropicClaude\Claude.exe`
 
 ## 🎬 Test Example
 
-- [Watch video](https://youtu.be/RaGJxHGllNY)
+- [Watch the video with my chatbot](https://youtu.be/RaGJxHGllNY)
+- [Watch the video with Claude Desktop](https://youtu.be/_vuhF7jKm1M)
