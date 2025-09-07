@@ -30,9 +30,9 @@ def sendResponse(msgId: Any, result: Any = None, error: dict[str, Any] | None = 
 def getCapabilities() -> dict[str, Any]:
     """Return minimal MCP capabilities (tools only)."""
     return {
-        "protocolVersion": "2024-11-05",
+        "protocolVersion": "2025-06-18",
         "serverInfo": {"name": "fel-stdio", "version": "0.1.0"},
-        "capabilities": {"tools": {}}
+        "capabilities": { "tools": { "listChanged": True } }
     }
 
 
@@ -185,29 +185,50 @@ def main() -> None:
       - parse one JSON-RPC request per line
       - route to MCP methods
       - write JSON-RPC response
+      - ignore notifications (messages without "id")
     """
     for line in sys.stdin:
         try:
             req = json.loads(line)
             method = req.get("method")
-            msgId = req.get("id")
+            msgId = req.get("id", None)
+
+            # Notificaciones: no llevan id -> no se responde
+            if msgId is None:
+                # Ej: notifications/initialized, notifications/tools/list_changed
+                continue
 
             if method == "initialize":
-                sendResponse(msgId, getCapabilities()); continue
+                sendResponse(msgId, getCapabilities())
+                continue
+
             if method == "tools/list":
-                sendResponse(msgId, listTools()); continue
+                sendResponse(msgId, listTools())
+                continue
+
             if method == "tools/call":
                 params = req.get("params", {})
                 name = params.get("name")
                 arguments = params.get("arguments", {})
                 result = callTool(name, arguments)
-                # MCP result envelope: content is an array of blocks
-                sendResponse(msgId, {"content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}]})
+                # MCP result envelope: content es un array de bloques
+                sendResponse(
+                    msgId,
+                    {"content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}]}
+                )
                 continue
 
             sendResponse(msgId, error={"code": -32601, "message": f"Method not found: {method}"})
+
         except Exception as e:
-            sendResponse(req.get("id"), error={"code": -32000, "message": str(e)})
+            # Solo respondemos si hay un id válido, si no, ignoramos (posible notificación malformada)
+            try:
+                _id = req.get("id", None) if isinstance(req, dict) else None
+            except Exception:
+                _id = None
+            if _id is not None:
+                sendResponse(_id, error={"code": -32000, "message": str(e)})
+            # si no hay id, no se responde (silencio)
 
 
 if __name__ == "__main__":
