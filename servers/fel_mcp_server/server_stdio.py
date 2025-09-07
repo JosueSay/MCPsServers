@@ -9,7 +9,7 @@ Implements:
 import sys, json, os, glob
 from typing import Any
 from decimal import Decimal, ROUND_HALF_UP
-from config import XML_PATH, LOGO_PATH, OUTPUT_PDF, DEFAULT_QR_SIZE, DEFAULT_TOP_BAR_HEIGHT
+from config import XML_PATH, LOGO_PATH, OUTPUT_PDF, DEFAULT_QR_SIZE, DEFAULT_TOP_BAR_HEIGHT, BATCH_OUT_DIR
 from fel_pdf import readFelXml, generatePdf
 
 
@@ -152,26 +152,42 @@ def batchFel(dirXml: str, outDir: str | None) -> dict[str, Any]:
     Render all *.xml inside dirXml to PDFs, write a manifest.json with results.
     Returns: { ok, count, out_dir, manifest_path }
     """
-    outDir = outDir or os.path.join("data", "out")
-    os.makedirs(outDir, exist_ok=True)
+    if not isinstance(dirXml, str) or not dirXml.strip():
+        raise ValueError("dir_xml must be a non-empty string")
 
-    manifest = []
-    for xml in sorted(glob.glob(os.path.join(dirXml, "*.xml"))):
-        pdfPath = os.path.join(outDir, os.path.splitext(os.path.basename(xml))[0] + ".pdf")
+    target_out = outDir if (isinstance(outDir, str) and outDir.strip()) else BATCH_OUT_DIR
+    target_out = os.path.abspath(target_out)
+    os.makedirs(target_out, exist_ok=True)
+
+    xml_pattern = os.path.join(dirXml, "*.xml")
+    xml_files = sorted(glob.glob(xml_pattern))
+
+    manifest: list[dict[str, str]] = []
+    for xml in xml_files:
+        pdf_path = os.path.join(
+            target_out, os.path.splitext(os.path.basename(xml))[0] + ".pdf"
+        )
+        
         generatePdf(
-            xmlPath=xml,
+            xmlPath=os.path.abspath(xml),
             logoPath=LOGO_PATH,
-            outputPdf=pdfPath,
+            outputPdf=pdf_path,
             topBarHeight=DEFAULT_TOP_BAR_HEIGHT,
             qrSize=DEFAULT_QR_SIZE,
         )
-        manifest.append({"xml": xml, "pdf": pdfPath})
+        manifest.append({"xml": os.path.abspath(xml), "pdf": os.path.abspath(pdf_path)})
 
-    manifestPath = os.path.join(outDir, "manifest.json")
-    with open(manifestPath, "w", encoding="utf-8") as f:
+    manifest_path = os.path.join(target_out, "manifest.json")
+    with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-    return {"ok": True, "count": len(manifest), "out_dir": outDir, "manifest_path": manifestPath}
+    return {
+        "ok": True,
+        "count": len(manifest),
+        "out_dir": target_out,
+        "manifest_path": manifest_path,
+    }
+
 
 
 def callTool(name: str, args: dict[str, Any]) -> dict[str, Any]:

@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 XML_PATH   = os.getenv("FEL_XML_PATH", str(ROOT / "data/xml/factura.xml"))
 LOGO_PATH  = os.getenv("FEL_LOGO_PATH", str(ROOT / "data/logos/logo.jpg"))
 OUTPUT_PDF = os.getenv("FEL_OUTPUT_PDF", str(ROOT / "data/out/factura.pdf"))
+BATCH_OUT_DIR = os.getenv("FEL_BATCH_OUT_DIR", str(ROOT / "data/out"))
 
 # ---------- Fonts & theme ----------
 ACTIVE_FONT         = int(os.getenv("FEL_ACTIVE_FONT", "1"))  # 1 = Montserrat, 2 = RobotoMono
