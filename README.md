@@ -214,3 +214,5 @@ Here `<absolute_path>\Claude.exe` should be replaced with the full path to your 
 
 - [Watch the video with my chatbot](https://youtu.be/RaGJxHGllNY)
 - [Watch the video with Claude Desktop](https://youtu.be/_vuhF7jKm1M)
+
+![Official MCP Tools in Action](./images/image.png)
