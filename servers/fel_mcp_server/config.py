@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from reportlab.lib import colors
+from pathlib import Path
 
 load_dotenv()
 
@@ -17,14 +18,15 @@ DEFAULT_QR_SIZE        = int(os.getenv("FEL_QR_SIZE", "150"))
 DEFAULT_TOP_BAR_HEIGHT = int(os.getenv("FEL_TOP_BAR_HEIGHT", "20"))
 
 # ---------- Paths (from .env) ----------
-XML_PATH   = os.getenv("FEL_XML_PATH", "./data/xml/factura.xml")
-LOGO_PATH  = os.getenv("FEL_LOGO_PATH", "./data/logos/logo.jpg")
-OUTPUT_PDF = os.getenv("FEL_OUTPUT_PDF", "./data/out/factura.pdf")
+ROOT = Path(__file__).resolve().parents[2]
+XML_PATH   = os.getenv("FEL_XML_PATH", str(ROOT / "data/xml/factura.xml"))
+LOGO_PATH  = os.getenv("FEL_LOGO_PATH", str(ROOT / "data/logos/logo.jpg"))
+OUTPUT_PDF = os.getenv("FEL_OUTPUT_PDF", str(ROOT / "data/out/factura.pdf"))
 
 # ---------- Fonts & theme ----------
 ACTIVE_FONT         = int(os.getenv("FEL_ACTIVE_FONT", "1"))  # 1 = Montserrat, 2 = RobotoMono
-FONT_DIR_MONTSERRAT = os.getenv("FEL_FONT_DIR_MONTSERRAT", "./assets/fonts/Montserrat/static")
-FONT_DIR_ROBOTOMONO = os.getenv("FEL_FONT_DIR_ROBOTOMONO", "./assets/fonts/Roboto_Mono/static")
+FONT_DIR_MONTSERRAT = os.getenv("FEL_FONT_DIR_MONTSERRAT", str(ROOT / "assets/fonts/Montserrat/static"))
+FONT_DIR_ROBOTOMONO = os.getenv("FEL_FONT_DIR_ROBOTOMONO", str(ROOT / "assets/fonts/Roboto_Mono/static"))
 THEME               = os.getenv("FEL_THEME", "light")
 
 # ---------- Footer contact ----------

@@ -58,9 +58,9 @@ def listTools() -> dict[str, Any]:
                         "xml_path": {"type": "string"},
                         "logo_path": {"type": ["string", "null"]},
                         "theme": {"type": ["string", "null"]},
-                        "out_path": {"type": ["string", "null"]}
+                        "out_path": {"type": "string"}
                     },
-                    "required": ["xml_path"]
+                    "required": ["xml_path", "out_path"]
                 },
             },
             {
@@ -123,13 +123,22 @@ def validateFel(xmlPath: str) -> dict[str, Any]:
 def renderFel(xmlPath: str, logoPath: str | None, theme: str | None, outPath: str | None) -> dict[str, Any]:
     """
     Render a branded PDF from a FEL XML using ReportLab.
-    Uses defaults from config.py when arguments are None.
+    Uses defaults from config.py when optional arguments are None.
     """
-    logo = logoPath or LOGO_PATH
-    out = outPath or OUTPUT_PDF
-    # theme is available for future branching; not used here directly
+    # Log raw args to stderr for debugging
+    sys.stderr.write(f"fel_render args: xml={xmlPath}, logo={logoPath}, theme={theme}, out={outPath}\n")
+
+    # Validate out_path
+    if not isinstance(outPath, str) or not outPath.strip():
+        raise ValueError("out_path must be a non-empty string")
+
+    # Normalize arguments
+    xml = str(xmlPath)
+    logo = LOGO_PATH if logoPath in (None, "") else str(logoPath)
+    out  = str(outPath)
+
     generatePdf(
-        xmlPath=xmlPath,
+        xmlPath=xml,
         logoPath=logo,
         outputPdf=out,
         topBarHeight=DEFAULT_TOP_BAR_HEIGHT,
