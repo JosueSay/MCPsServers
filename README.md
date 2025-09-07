@@ -36,8 +36,8 @@ It includes a custom **FEL MCP server** that validates and renders **Guatemalan 
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd <your-repo-name>
+git clone <repo-url>
+cd <repo-name>
 
 # Create and activate a virtual environment
 python3.12 -m venv venv
@@ -45,7 +45,7 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-````
+```
 
 Copy the environment example and configure your Anthropic API key:
 
