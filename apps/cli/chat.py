@@ -47,6 +47,7 @@ from core.settings import (
     ROUTER_DEBUG,
     SYSTEM_PROMPT,
     ALLOWED_ROOTS,
+    MCP_CMDS,
 )
 
 console = Console()
@@ -112,10 +113,11 @@ def main() -> None:
     engine = ChatEngine(
         apiKey=API_KEY,
         model=MODEL,
-        mcpCmd=MCP_FEL_CMD,
+        mcpCmd=None,
         systemPrompt=SYSTEM_PROMPT,   # "reply in user's language; only use FEL tools when needed"
         allowedRoots=ALLOWED_ROOTS,   # minimal path sandbox
         routerDebug=ROUTER_DEBUG,     # print router/tool traces when True
+        mcpCmds=MCP_CMDS,
     )
     engine.start()
 

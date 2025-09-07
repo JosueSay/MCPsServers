@@ -123,7 +123,7 @@ class ChatEngine:
 
     Responsibilities
     ----------------
-    • Hold both Anthropic client and an MCP stdio client.
+    • Hold both Anthropic client and one or more MCP stdio clients.
     • Expose listTools(), callTool(), and chatTurn() to any frontend (CLI/Web).
     • Return debug bundles (router trace, tool calls) so the UI can render diagnostics.
 
@@ -146,10 +146,11 @@ class ChatEngine:
         self,
         apiKey: str,
         model: str,
-        mcpCmd: str,
+        mcpCmd: str | None,
         systemPrompt: str,
         allowedRoots: list[str] | None = None,
         routerDebug: bool = True,
+        mcpCmds: list[str] | None = None
     ):
         self.client = Anthropic(api_key=apiKey)
         self.model = model
@@ -157,24 +158,35 @@ class ChatEngine:
         self.routerDebug = routerDebug
         self.allowedRoots = allowedRoots or ["data/xml", "data/out", "data/logos"]
 
-        self.mcp = McpStdioClient(mcpCmd)
-        self.toolsCatalog: dict = {}
+        # Build one or multiple MCP stdio clients
+        cmds = mcpCmds or ([mcpCmd] if mcpCmd else [])
+        self.mcpClients: list[McpStdioClient] = [McpStdioClient(c) for c in cmds]
+        self.toolsCatalog: dict = {}               # merged catalog across all MCPs
+        self._toolIndex: dict[str, McpStdioClient] = {}  # tool name -> client
 
     # ---------- lifecycle ----------
 
     def start(self) -> None:
-        """Launch MCP server and cache its tools catalog."""
-        self.mcp.start()
-        self.toolsCatalog = self.mcp.listTools()
+        """Launch all MCP servers and merge their tools into one catalog."""
+        merged = {"tools": []}
+        for cli in self.mcpClients:
+            cli.start()
+            tc = cli.listTools()
+            for t in tc.get("result", {}).get("tools", []):
+                name = t["name"]
+                merged["tools"].append(t)
+                self._toolIndex[name] = cli
+        self.toolsCatalog = {"result": merged}
 
     def stop(self) -> None:
-        """Terminate MCP server process."""
-        self.mcp.stop()
+        """Terminate all MCP server processes."""
+        for cli in self.mcpClients:
+            cli.stop()
 
     # ---------- utilities ----------
 
     def listTools(self) -> dict:
-        """Return the cached MCP tools catalog."""
+        """Return the cached merged MCP tools catalog."""
         return self.toolsCatalog
 
     def callTool(self, name: str, args: dict[str, Any]) -> Any:
@@ -183,14 +195,17 @@ class ChatEngine:
         Returns a parsed Python object when the tool returns JSON text;
         otherwise returns the raw string.
         """
+        cli = self._toolIndex.get(name)
+        if not cli:
+            raise ValueError(f"Unknown tool: {name}")
         safe = sanitizeMcpArgs(args or {}, self.allowedRoots)
-        return parseTextBlock(self.mcp.callTool(name, safe))
+        return parseTextBlock(cli.callTool(name, safe))
 
     # ---------- main chat turn with native tool-use ----------
 
     def chatTurn(self, history: list[dict], userText: str, maxHops: int = 3) -> dict[str, Any]:
         """
-        One conversational turn with tool-use enabled.
+        Perform one conversational turn with tool-use enabled.
 
         Flow
         ----
@@ -198,8 +213,12 @@ class ChatEngine:
         2) If 'tool_use' appears, call MCP, append 'tool_result' blocks, and loop.
         3) When no more tools are requested, return the final assistant text.
 
-        Returns a dict with final text plus optional traces/tool-call summaries
-        (useful for CLI/Web UIs to render debug info).
+        Returns
+        -------
+        dict with:
+          • finalText (assistant's reply without raw JSON)
+          • router.trace (list of decision hops and usage)
+          • tools.calls (tool invocations with arguments/results)
         """
         tools = buildAnthropicTools(self.toolsCatalog)
         messages = history + [{"role": "user", "content": userText}]
@@ -222,7 +241,7 @@ class ChatEngine:
             toolUses = [b for b in blocks if getattr(b, "type", None) == "tool_use"]
             textBlocks = [getattr(b, "text", "") for b in blocks if getattr(b, "type", None) == "text"]
 
-            # record router hop (only if debugging)
+            # record router hop (only if debugging enabled)
             if self.routerDebug:
                 trace.append({
                     "decision": "tool_use" if toolUses else "no_tool",
@@ -242,10 +261,12 @@ class ChatEngine:
 
                     try:
                         safeArgs = sanitizeMcpArgs(toolArgs, self.allowedRoots)
-                        rawResp = self.mcp.callTool(toolName, safeArgs)
+                        cli = self._toolIndex.get(toolName)
+                        if not cli:
+                            raise ValueError(f"Unknown tool: {toolName}")
+                        rawResp = cli.callTool(toolName, safeArgs)
                         parsed = parseTextBlock(rawResp)
 
-                        # Serialize tool result as a single text block
                         resultsForModel.append({
                             "type": "tool_result",
                             "tool_use_id": toolUseId,
@@ -271,5 +292,5 @@ class ChatEngine:
             finalText = "\n".join([t for t in textBlocks if t]).strip() or "(no answer)"
             return {"finalText": finalText, "router": {"trace": trace}, "tools": {"calls": toolCalls}}
 
-        # Safety if too many hops
+        # Safety exit if too many hops
         return {"finalText": "(no answer)", "router": {"trace": trace}, "tools": {"calls": toolCalls}}

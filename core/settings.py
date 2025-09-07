@@ -53,10 +53,14 @@ _DEFAULT_PROMPT = (
 )
 SYSTEM_PROMPT: str = os.getenv("SYSTEM_PROMPT", _DEFAULT_PROMPT)
 
+MCP_CMDS: list[str] = envList("MCP_CMDS", "...")
+
+
 __all__ = [
     "API_KEY",
     "MODEL",
     "MCP_FEL_CMD",
+    "MCP_CMDS",
     "LOG_DIR",
     "ROUTER_DEBUG",
     "SYSTEM_PROMPT",
@@ -64,3 +68,4 @@ __all__ = [
     "envBool",
     "envList",
 ]
+
