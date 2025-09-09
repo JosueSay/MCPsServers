@@ -127,12 +127,74 @@ printf '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"ow_get_p
 | python servers/ow_mcp_server/server_stdio.py
 ```
 
-## 6. File Structure
+## 6. Testing the HTTP Server (Cloud Deployment Simulation)
+
+In addition to `server_stdio.py`, the project also exposes an HTTP server using **FastAPI + Uvicorn**.
+This allows you to test the MCP server locally as if it were already running on **Google Cloud Run or Fly.io**.
+
+### 6.1 Start the HTTP Server
+
+```bash
+python -m uvicorn servers.ow_mcp_server.server_http:app --host 0.0.0.0 --port 8080
+```
+
+You should see in the console:
+
+```bash
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+```
+
+### 6.2 Install Utilities (Optional)
+
+If you don’t have `jq` installed (for pretty-printing JSON):
+
+```bash
+sudo apt update && sudo apt install -y jq
+```
+
+### 6.3 Test Calls with `curl`
+
+**Initialize:**
+
+```bash
+curl -s http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}' | jq
+```
+
+**List Tools:**
+
+```bash
+curl -s http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | jq
+```
+
+**Player Summary:**
+
+```bash
+curl -s http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ow_get_player_summary","arguments":{"playerId":"YSE#11202","platform":"pc"}}}' | jq
+```
+
+**Player Stats:**
+
+```bash
+curl -s http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"ow_get_player_stats","arguments":{"playerId":"YSE#11202","platform":"pc","gamemode":"quickplay"}}}' | jq
+```
+
+## 7. File Structure
 
 ```bash
 servers/
-└─ ow_mcp_server/
-   ├─ server_stdio.py   # MCP server (no SDK)
-   ├─ config.py         # Constants (allowed platforms, gamemodes)
-   └─ ow_api.py         # getPlayerSummary(), getPlayerStats()
+└── ow_mcp_server/
+    ├── README.md         # Usage documentation (this file)
+    ├── __init__.py       # Marks the directory as a Python package
+    ├── config.py         # Constants (platforms, gamemodes, etc.)
+    ├── ow_api.py         # OverFast API wrappers (getPlayerSummary, getPlayerStats)
+    ├── server_http.py    # MCP HTTP server (FastAPI/Uvicorn)
+    └── server_stdio.py   # MCP STDIO server (JSON-RPC)
 ```

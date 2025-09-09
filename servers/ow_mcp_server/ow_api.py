@@ -1,9 +1,9 @@
 import requests
-from typing import Any, Dict, Optional
-from config import ALLOWED_GAMEMODES, ALLOWED_PLATFORMS, BASE_URL
+from typing import Any, Optional
+from .config import ALLOWED_GAMEMODES, ALLOWED_PLATFORMS, BASE_URL
 
 
-def get(path: str, params: Optional[Dict[str, Any]] = None) -> Any:
+def get(path: str, params: Optional[dict[str, Any]] = None) -> Any:
     """Generic GET to Overfast API."""
     url = f"{BASE_URL}{path}"
     resp = requests.get(url, params=params, timeout=20)
@@ -27,7 +27,7 @@ def getPlayerSummary(playerId: str,platform: Optional[str] = None, gamemode: Opt
     Cache TTL: ~10 minutes (per API docs).
     """
     pid = normalizePlayerId(playerId)
-    params: Dict[str, Any] = {}
+    params: dict[str, Any] = {}
 
     if platform is not None:
         if platform not in ALLOWED_PLATFORMS:
@@ -57,7 +57,7 @@ def getPlayerStats(
     if gamemode not in ALLOWED_GAMEMODES:
         raise ValueError(f"Invalid gamemode '{gamemode}'. Allowed: {sorted(ALLOWED_GAMEMODES)}")
 
-    params: Dict[str, Any] = {"platform": platform, "gamemode": gamemode}
+    params: dict[str, Any] = {"platform": platform, "gamemode": gamemode}
     if hero:
         params["hero"] = hero  # expects hero key as per API
 

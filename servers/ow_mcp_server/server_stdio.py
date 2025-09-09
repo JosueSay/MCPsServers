@@ -7,14 +7,14 @@ Implements:
 """
 
 import sys, json
-from typing import Any, Dict
-from ow_api import getPlayerSummary, getPlayerStats
-from config import ALLOWED_GAMEMODES, ALLOWED_PLATFORMS
+from typing import Any
+from .ow_api import getPlayerSummary, getPlayerStats
+from .config import ALLOWED_GAMEMODES, ALLOWED_PLATFORMS
 
 # ---------------------------
 # JSON-RPC / MCP primitives
 # ---------------------------
-def sendResponse(msgId: Any, result: Any = None, error: Dict[str, Any] | None = None) -> None:
+def sendResponse(msgId: Any, result: Any = None, error: dict[str, Any] | None = None) -> None:
     """Write a single JSON-RPC response to STDOUT."""
     payload = {"jsonrpc": "2.0", "id": msgId}
     if error is not None:
@@ -25,7 +25,7 @@ def sendResponse(msgId: Any, result: Any = None, error: Dict[str, Any] | None = 
     sys.stdout.flush()
 
 
-def getCapabilities() -> Dict[str, Any]:
+def getCapabilities() -> dict[str, Any]:
     """Return minimal MCP capabilities (tools only)."""
     return {
         "protocolVersion": "2025-06-18",
@@ -34,7 +34,7 @@ def getCapabilities() -> Dict[str, Any]:
     }
 
 
-def listTools() -> Dict[str, Any]:
+def listTools() -> dict[str, Any]:
     """Describe available tools and their JSON Schemas."""
     return {
         "tools": [
@@ -72,7 +72,7 @@ def listTools() -> Dict[str, Any]:
 # ---------------------------
 # Business logic wrappers
 # ---------------------------
-def callTool(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+def callTool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     """Dispatch a tools/call to the correct Overwatch operation."""
     if name == "ow_get_player_summary":
         playerId = args.get("playerId")
