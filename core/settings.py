@@ -49,10 +49,14 @@ ALLOWED_ROOTS: list[str] = envList("ALLOWED_ROOTS", "data/xml,data/out,data/logo
 # System instruction for the model. You can override with SYSTEM_PROMPT in .env
 _DEFAULT_PROMPT = (
     "You are a helpful general assistant. Always reply in the user's language. "
-    "Only use MCP tools when the request is related to FEL invoices (validate XML, render PDF, batch). "
+    "Use MCP tools whenever the request matches any available tool (FEL, filesystem, GitHub, Overwatch, etc). "
     "After using a tool, return one concise, human-readable answer that addresses the user's request; "
-    "do not paste raw JSON. If the question is unrelated to FEL, respond normally without tools. "
-    "When rendering PDFs, clearly state the output path. When validating, summarize totals and any issues."
+    "do not paste raw JSON. "
+    "When rendering PDFs, clearly state the output path. "
+    "When validating FEL invoices, summarize totals and any issues. "
+    "When using filesystem tools, always prefer them for file or directory operations. "
+    "When using GitHub tools, always prefer them for repository queries. "
+    "Never answer directly if a relevant MCP tool exists."
 )
 SYSTEM_PROMPT: str = os.getenv("SYSTEM_PROMPT", _DEFAULT_PROMPT)
 
