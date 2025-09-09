@@ -324,6 +324,64 @@ Here `<absolute_path>\Claude.exe` should be replaced with the full path to your 
 - [JSON-RPC 2.0](https://www.jsonrpc.org/)
 - [Overwatch API](https://github.com/TeKrop/overfast-api)
 
+## 📝 Prompts for Testing
+
+These are the prompts used for testing the chatbot. They differ in language to evaluate how well the chatbot adapts to Spanish and English inputs.
+
+### Normal
+
+```bash
+¿Quién es Tom Cruise?
+```
+
+```bash
+He's dead?
+```
+
+### FEL
+
+```bash
+Can you generate a PDF of data/xml/factura.xml?
+```
+
+```bash
+¿Puedes verificar los precios de data/xml/factura.xml?
+```
+
+```bash
+¿Cuánto sería el total si lo multiplicamos por 2?
+```
+
+### FileSystem
+
+```bash
+Lista todos los archivos que hay en el directorio data/testing.
+```
+
+```bash
+Read the complete contents of the file data/testing/file1.txt.
+```
+
+### GitHub
+
+```bash
+Busca información del repositorio JosueSay/SchedulerSim y muéstrame su README.
+```
+
+```bash
+Get the list of commits from the main branch of the repository JosueSay/SchedulerSim.
+```
+
+### MCP Remote OW
+
+```bash
+Dame un resumen de las estadísticas del jugador YSE#11202 en Overwatch (plataforma PC), incluyendo winrate, KDA, daño y sanación usando ow_get_player_summary.
+```
+
+```bash
+Show me the detailed labeled career stats for the player YSE#11202 on PC in quickplay mode, using ow_get_player_stats.
+```
+
 ## 🎬 Test Example
 
 - [Watch the video with my chatbot](https://youtu.be/RaGJxHGllNY)
