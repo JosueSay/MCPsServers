@@ -1,6 +1,6 @@
 import json
 from typing import Any, Optional
-from anthropic import Anthropic
+from anthropic import Anthropic, RateLimitError, APIStatusError
 from .mcp_stdio import McpStdioClient, parseTextBlock
 from .mcp_http import McpHttpClient
 
@@ -243,15 +243,37 @@ class ChatEngine:
         toolCalls: list[dict[str, Any]] = []
 
         for _ in range(maxHops):
-            resp = self.client.messages.create(
-                model=self.model,
-                max_tokens=800,
-                tools=tools,
-                tool_choice={"type": "auto"},  # let the model decide
-                messages=messages,
-                temperature=0,
-                system=self.systemPrompt,
-            )
+            try:
+                resp = self.client.messages.create(
+                    model=self.model,
+                    max_tokens=800,
+                    tools=tools,
+                    tool_choice={"type": "auto"},
+                    messages=messages,
+                    temperature=0,
+                    system=self.systemPrompt,
+                )
+
+            except RateLimitError as e:
+                friendly = ("⚠️ The request exceeded a limit (tokens/minute or size). "
+                            "Ask something more specific or reduce the context.")
+                # Return a 'final' result so the CLI displays it cleanly
+                trace.append({"decision": "error", "error": "rate_limit", "detail": str(e)[:200]})
+                return {"finalText": friendly, "router": {"trace": trace}, "tools": {"calls": []}}
+
+            except APIStatusError as e:
+                # Other API HTTP status errors
+                code = getattr(e, "status_code", "API")
+                friendly = f"⚠️ The model could not respond (status {code}). Please try again later."
+                trace.append({"decision": "error", "error": "api_status", "detail": str(e)[:200]})
+                return {"finalText": friendly, "router": {"trace": trace}, "tools": {"calls": []}}
+
+            except Exception as e:
+                # Catch-all final
+                friendly = "⚠️ There was a problem generating the response. Please try again."
+                trace.append({"decision": "error", "error": "unknown", "detail": str(e)[:200]})
+                return {"finalText": friendly, "router": {"trace": trace}, "tools": {"calls": []}}
+
             blocks = list(resp.content or [])
             usage = usageDict(resp)
 

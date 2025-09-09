@@ -37,6 +37,8 @@ load_dotenv()
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
+from rich.panel import Panel
+from rich.text import Text
 
 from core.engine import ChatEngine
 from core.settings import (
@@ -195,7 +197,17 @@ def main() -> None:
                     printJsonBlock({"source": "tools", "calls": turn["tools"]["calls"]})
 
             # Final assistant text
-            console.print(Markdown(turn["finalText"]))
+            console.print()
+            console.print(
+                Panel.fit(
+                    Markdown(turn["finalText"]),
+                    title="[bold magenta]CLAUDE[/]",
+                    title_align="left",
+                    border_style="cyan",
+                    padding=(1, 2),
+                )
+            )
+            console.print()
             logEvent({"type": "llm_auto", "model": MODEL, "input": user, "output": turn["finalText"]})
 
             # Update short history (assistant & user text only)
