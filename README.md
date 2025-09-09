@@ -316,14 +316,6 @@ Stop-Process -Name "Claude" -Force; Start-Process "<absolute_path>\Claude.exe"
 Here `<absolute_path>\Claude.exe` should be replaced with the full path to your Claude installation, for example:
 `C:\Users\<username>\AppData\Local\AnthropicClaude\Claude.exe`
 
-## 📚 References
-
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Anthropic API Docs](https://docs.anthropic.com/en/api)
-- [Antrhopic Build an MCP Server](https://modelcontextprotocol.io/quickstart/server)
-- [JSON-RPC 2.0](https://www.jsonrpc.org/)
-- [Overwatch API](https://github.com/TeKrop/overfast-api)
-
 ## 📝 Prompts for Testing
 
 These are the prompts used for testing the chatbot. They differ in language to evaluate how well the chatbot adapts to Spanish and English inputs.
@@ -386,3 +378,11 @@ Show me the detailed labeled career stats for the player YSE#11202 on PC in quic
 
 - [Watch the video with my chatbot](https://youtu.be/RaGJxHGllNY)
 - [Watch the video with Claude Desktop](https://youtu.be/_vuhF7jKm1M)
+
+## 📚 References
+
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [Anthropic API Docs](https://docs.anthropic.com/en/api)
+- [Antrhopic Build an MCP Server](https://modelcontextprotocol.io/quickstart/server)
+- [JSON-RPC 2.0](https://www.jsonrpc.org/)
+- [Overwatch API](https://github.com/TeKrop/overfast-api)
