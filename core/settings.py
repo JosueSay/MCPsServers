@@ -34,6 +34,9 @@ MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 # Command to launch your MCP server (stdio JSON-RPC)
 MCP_FEL_CMD: str = os.getenv("MCP_FEL_CMD", "python servers/fel_mcp_server/server_stdio.py")
 
+# URL for remote MCP (HTTP JSON-RPC)
+MCP_URL: str = os.getenv("MCP_URL", "")
+
 # Logs directory (the CLI will create per-session JSONL files here)
 LOG_DIR: str = os.getenv("LOG_DIR", "./logs/sessions")
 
@@ -60,6 +63,7 @@ __all__ = [
     "API_KEY",
     "MODEL",
     "MCP_FEL_CMD",
+    "MCP_URL",
     "MCP_CMDS",
     "LOG_DIR",
     "ROUTER_DEBUG",

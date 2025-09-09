@@ -1,8 +1,8 @@
 import json
-from typing import Any
+from typing import Any, Optional
 from anthropic import Anthropic
 from .mcp_stdio import McpStdioClient, parseTextBlock
-
+from .mcp_http import McpHttpClient
 
 def usageDict(resp: Any) -> dict[str, int]:
     """
@@ -150,7 +150,8 @@ class ChatEngine:
         systemPrompt: str,
         allowedRoots: list[str] | None = None,
         routerDebug: bool = True,
-        mcpCmds: list[str] | None = None
+        mcpCmds: list[str] | None = None,
+        mcpUrl: str | None = None,
     ):
         self.client = Anthropic(api_key=apiKey)
         self.model = model
@@ -158,9 +159,14 @@ class ChatEngine:
         self.routerDebug = routerDebug
         self.allowedRoots = allowedRoots or ["data/xml", "data/out", "data/logos"]
 
-        # Build one or multiple MCP stdio clients
+        # STDIO clients
         cmds = mcpCmds or ([mcpCmd] if mcpCmd else [])
-        self.mcpClients: list[McpStdioClient] = [McpStdioClient(c) for c in cmds]
+        self.stdioClients: list[McpStdioClient] = [McpStdioClient(c) for c in cmds]
+        
+        # HTTP client
+        self.httpClient: Optional[McpHttpClient] = McpHttpClient(mcpUrl) if mcpUrl else None
+        
+        # Catalog
         self.toolsCatalog: dict = {}               # merged catalog across all MCPs
         self._toolIndex: dict[str, McpStdioClient] = {}  # tool name -> client
 
@@ -169,18 +175,29 @@ class ChatEngine:
     def start(self) -> None:
         """Launch all MCP servers and merge their tools into one catalog."""
         merged = {"tools": []}
-        for cli in self.mcpClients:
+
+        # 1) STDIO
+        for cli in self.stdioClients:
             cli.start()
             tc = cli.listTools()
             for t in tc.get("result", {}).get("tools", []):
                 name = t["name"]
                 merged["tools"].append(t)
                 self._toolIndex[name] = cli
+
+        # 2) HTTP (no requiere start)
+        if self.httpClient:
+            tc = self.httpClient.listTools()
+            for t in tc.get("result", {}).get("tools", []):
+                name = t["name"]
+                merged["tools"].append(t)
+                self._toolIndex[name] = self.httpClient
+
         self.toolsCatalog = {"result": merged}
 
     def stop(self) -> None:
         """Terminate all MCP server processes."""
-        for cli in self.mcpClients:
+        for cli in self.stdioClients:
             cli.stop()
 
     # ---------- utilities ----------
