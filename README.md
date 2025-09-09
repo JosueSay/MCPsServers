@@ -1,30 +1,37 @@
-# Claude Console + MCP (FEL)
+# Claude Console + MCP (FEL + Overwatch)
 
-This project implements a **console-based chatbot** that connects to **Anthropic Claude** via API and integrates with **Model Context Protocol (MCP)** servers.  
-The chatbot can **maintain conversational context**, automatically decide when to use tools, and log all interactions in structured JSONL files.  
-It includes a custom **FEL MCP server** that validates and renders **Guatemalan FEL electronic invoices** into branded PDFs.
+This project implements a **console chatbot** that connects to **Anthropic Claude** via API and integrates multiple **Model Context Protocol (MCP)** servers.
+The chatbot can **maintain conversational context**, automatically decide when to use tools, and log all interactions in structured JSONL files.
 
-> **Monorepo notice:** This repository consolidates two implemented codebases: the **chatbot (CLI/UI)** and the **local FEL MCP server**.  
->
-> It also links to a third repository used **only as reference** for API connection patterns.
+It includes a **local FEL MCP** that validates and renders **Guatemalan electronic invoices (FEL)** in PDF with watermark, and a **remote Overwatch MCP (HTTP, cloud-deployed)** that allows querying player statistics.
 
-## 🔗 Related repositories
+> **Monorepo notice:** This repository consolidates two implemented codebases: the **chatbot (CLI/UI)** and the **local FEL MCP**.
+> Additionally, it includes an **Overwatch MCP (HTTP, Cloud Run)** and links a reference repository for connection patterns.
 
-- [Chatbot (CLI / UI)](https://github.com/JosueSay/ChatBotMCP) — Implemented and unified in this monorepo.
-- [MCP FEL (Local)](https://github.com/JosueSay/MCPLocalFEL) — Implemented and unified in this monorepo.
-- [Reference: OpenAI Chat API Example](https://github.com/JosueSay/Selectivo_IA/blob/main/docs_assistant/README.md) — Reference only (used for connection patterns, instruction context).
+## 🔗 Related Repositories
+
+- [Chatbot (CLI / UI)](https://github.com/JosueSay/ChatBotMCP) — Integrated in this monorepo.
+- [FEL MCP (Local)](https://github.com/JosueSay/MCPLocalFEL) — Integrated in this monorepo.
+- [Reference: OpenAI Chat API Example](https://github.com/JosueSay/Selectivo_IA/blob/main/docs_assistant/README.md) — Reference only (connection patterns).
 
 ## ✨ Features
 
 - Connects to **Anthropic Claude API** (LLM).
-- Maintains conversational context during a session.
+- Maintains conversational context throughout the session.
 - Supports **manual and automatic tool usage**.
-- Integrated **FEL MCP tools**:
-  - `fel_validate`: Validate XML totals (subtotal, VAT 12%, total).
-  - `fel_render`: Render branded PDF invoices from FEL XML.
-  - `fel_batch`: Render multiple XML invoices into PDFs + manifest.
-- Session logs stored as **structured JSONL**.
-- Path sandboxing (`ALLOWED_ROOTS`) to prevent unsafe file access.
+- Integrated tools:
+
+  - **FEL MCP (local):**
+
+    - `fel_validate`: validates XML totals (subtotal, 12% VAT, total).
+    - `fel_render`: generates PDF invoices with watermark from XML.
+    - `fel_batch`: processes multiple XML invoices → PDFs + manifest.json.
+  - **Overwatch MCP (HTTP, cloud):**
+
+    - `ow_get_player_summary`: summary of player stats (winrate, KDA, damage, healing).
+    - `ow_get_player_stats`: full stats with tags (by role, hero, mode).
+- Session logs saved in **structured JSONL**.
+- Sandbox paths (`ALLOWED_ROOTS`) to prevent unsafe file access.
 
 ## ⚙️ Requirements
 
@@ -34,8 +41,8 @@ It includes a custom **FEL MCP server** that validates and renders **Guatemalan 
 
 ## 🔧 Installation
 
-When starting the chatbot, you can now run **multiple MCP servers at the same time**.  
-This allows you to combine local tools (e.g., FEL) with external integrations like **Filesystem** and **GitHub**.
+When starting the chatbot, you can now run **multiple MCP servers in parallel**.
+This allows combining local tools (e.g., FEL) with external integrations such as **Overwatch (HTTP cloud)**, **Filesystem**, and **GitHub**.
 
 ### Environment Variables
 
@@ -49,9 +56,9 @@ GITHUB_TOKEN=your_token # Personal Access Token (fine-grained or classic)
 
 # ---- MCPS ----
 MCP_FEL_CMD="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py"
-MCP_URL=url_mcp # pending
+MCP_URL=https://ow-mcp-server-XXXXXX.run.app/mcp # Your Overwatch MCP cloud URL
 
-# Multiple MCP servers (comma-separated)
+# Multiple MCPs (comma-separated)
 # Recommended order: FEL (local), Filesystem (Docker), GitHub (Docker)
 MCP_CMDS="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py,docker run --rm -i -v /ABSOLUTE/PATH/data/testing:/data node:22 npx -y @modelcontextprotocol/server-filesystem /data,docker run --rm -i -e GITHUB_TOKEN node:22 npx -y @modelcontextprotocol/server-github"
 
@@ -62,7 +69,7 @@ ROUTER_DEBUG=0 # 1: active | 0: inactive
 
 ### GitHub MCP
 
-To use the **GitHub MCP** you need:
+To use the **GitHub MCP**, you need to:
 
 1. Create a **personal token** (fine-grained or classic).
 
@@ -72,7 +79,7 @@ To use the **GitHub MCP** you need:
    git clone https://github.com/modelcontextprotocol/servers.git
    ```
 
-3. Replace `/ABSOLUTE/PATH/servers` in your `.env` with the actual path to the cloned repo.
+3. Replace `/ABSOLUTE/PATH/servers` in your `.env` with the actual cloned path.
 
 This way, the chatbot can launch and orchestrate multiple MCPs in parallel.
 
@@ -84,40 +91,67 @@ Start the chatbot from the project root:
 python apps/cli/chat.py
 ```
 
-You will see:
+You will see something like:
 
 ```bash
-───────────────────── Claude Console + MCP (FEL) ──────────────────────
-commands: /exit | /clear | /tools | fel_validate <xml> | fel_render <xml> | fel_batch <dir_xml>
+───────────────────── Claude Console + MCP (FEL + Overwatch) ──────────────────────
+commands: /exit | /clear | /tools
 You ›
 ```
 
-### Example
+### FEL Example
 
-```text
+```bash
 You › /tools
 MCP Tools
 name         | description                                  | required args
 -------------|----------------------------------------------|---------------
 fel_validate | Validate FEL XML totals and required fields  | xml_path
-fel_render   | Render branded PDF from FEL XML              | xml_path
-fel_batch    | Render directory of FEL XMLs -> manifest.json | dir_xml
+fel_render   | Generate PDF with watermark from FEL XML     | xml_path
+fel_batch    | Process FEL XML directory → manifest         | dir_xml
 ```
 
 ```bash
 You › puedes validar precios de data/xml/factura.xml?
 La validación de la factura fue exitosa. Los totales calculados son:
 
- • Subtotal: Q8,010.59
- • IVA (12%): Q961.27
- • Total: Q8,971.86
+ • Subtotal: Q8,010.59  
+ • IVA (12%): Q961.27  
+ • Total: Q8,971.86  
 
 No se encontraron errores en los precios ni en los campos requeridos.
 ```
 
-If absolute paths for the official MCP servers were set, you can now have more tools available: **FEL + System Files + GitHub**.
+### Overwatch Example (HTTP)
 
-![Official MCP Tools in Action](./images/mcp_tools.png)
+```bash
+You › resume Overwatch stats for player YSE#11202 using ow_get_player_summary
+Overall Performance:
+
+ • 4,263 games played with a 52.8% winrate (2,251 wins, 2,012 losses)
+ • 608 hours total playtime
+ • 3.03 KDA ratio with 15.07 average eliminations per game
+
+Role Distribution:
+
+ • Tank: 1,699 games (51.85% winrate, 3.27 KDA)
+ • Damage: 1,241 games (53.42% winrate, 3.08 KDA)
+ • Support: 1,323 games (53.44% winrate, 2.64 KDA)
+
+Top Heroes by Games Played:
+
+ 1 Doomfist - 523 games (47.8% winrate)
+ 2 Lucio - 332 games (58.73% winrate)
+ 3 Junkrat - 289 games (56.06% winrate)
+ 4 Reinhardt - 229 games (60.26% winrate)
+ 5 Cassidy - 203 games (55.17% winrate)
+
+The player shows solid performance across all roles with slightly better winrates on damage and support heroes compared to tank. Lucio and Reinhardt appear to be among their strongest heroes with high winrates.
+```
+
+With absolute paths configured for official servers, you can now access more tools: **FEL + Overwatch (cloud) + Filesystem + GitHub**.
+
+![MCP Tools in action](./images/mcp_tools.png)
 
 ## 🗂 Project Structure
 
@@ -125,22 +159,83 @@ If absolute paths for the official MCP servers were set, you can now have more t
 .
 ├── apps/
 │   ├── cli/
-│   │   └── chat.py           # CLI chatbot frontend
-│   └── ui/                   # Pending: future UI frontend
+│   │   └── chat.py             # Chatbot CLI frontend
+│   └── ui/                     # Pending: possible UI frontend
 ├── core/
-│   ├── engine.py             # Orchestration layer (Claude + MCP)
-│   ├── mcp_stdio.py          # Minimal JSON-RPC client for MCP servers
-│   └── settings.py           # Environment and configuration
-├── servers/fel_mcp_server/   # FEL MCP server (validate, render, batch)
+│   ├── engine.py               # Orchestration (Claude + MCP)
+│   ├── mcp_stdio.py            # JSON-RPC client (MCP via stdio/local)
+│   ├── mcp_http.py             # JSON-RPC client (MCP via HTTP/remote)
+│   └── settings.py             # Configuration and environment variables
+├── servers/
+│   ├── fel_mcp_server/         # FEL MCP (validate, render, batch)
+│   └── ow_mcp_server/          # Overwatch MCP (HTTP + stdio)
+│       ├── config.py           # Constants (platforms, modes, roles)
+│       ├── ow_api.py           # Overfast API calls (stats and summary)
+│       ├── server_http.py      # MCP server via HTTP (cloud deployment)
+│       └── server_stdio.py     # MCP server via stdio (for local use)
 ├── data/
-│   ├── logos/                # Image logo
-│   ├── xml/                  # Sample FEL XML input
-│   └── out/                  # PDF output
-├── logs/sessions/            # Session logs (.jsonl)
+│   ├── logos/                  # Company logos
+│   ├── xml/                    # Example FEL invoice XMLs
+│   ├── out/                    # Output PDFs
+│   └── testing/                # Test files (filesystem MCP)
+├── logs/sessions/              # Session logs (.jsonl)
 ├── assets/
-│   ├── fonts/                # Custom fonts (Montserrat, Roboto Mono)
-│   └── images/               # Icons (phone, email, web)
-└── docs/                     # Documentation MCP + Code
+│   ├── fonts/                  # Custom fonts (Montserrat, Roboto Mono)
+│   └── images/                 # Icons (phone, email, web)
+└── docs/                       # Project and MCP documentation
+```
+
+### Workflow
+
+```mermaid
+flowchart LR
+  subgraph User["CLI / UI"]
+    U["Terminal<br/>apps/cli/chat.py"]
+  end
+
+  subgraph Core["Core (chatbot engine)"]
+    E["engine.py<br/>(Claude + MCP router)"]
+    S1["mcp_stdio.py"]
+    S2["mcp_http.py"]
+    CFG["settings.py<br/>(.env)"]
+    LOG["logs/sessions/*.jsonl"]
+  end
+
+  subgraph LLM["Anthropic Claude API"]
+    C["Claude<br/>(model)"]
+  end
+
+  subgraph MCPs_Local["Local MCPs (STDIO)"]
+    FEL["fel_mcp_server/server_stdio.py<br/>FEL: validate/render/batch"]
+    FS["docker server-filesystem<br/>(@mcp/server-filesystem)"]
+    GH["docker server-github<br/>(@mcp/server-github)"]
+  end
+
+  subgraph MCPs_Remote["Remote MCPs (HTTP)"]
+    OW["ow_mcp_server/server_http<br/>Cloud Run URL /mcp<br/>ow_get_player_*"]
+  end
+
+  subgraph RepoData["Local resources"]
+    ASSETS["assets/<br/>fonts, images"]
+    DATA["data/<br/>xml, out, testing"]
+  end
+
+  U --> E
+  E --> C
+
+  E -. "tools:list/call" .-> S1
+  E -. "tools:list/call" .-> S2
+
+  S1 --> FEL
+  S1 --> FS
+  S1 --> GH
+
+  S2 --> OW
+
+  E <--> LOG
+  FEL -. "uses" .-> ASSETS
+  FEL <--> DATA
+  FS -. "mounts" .-> DATA
 ```
 
 ## 📝 Logs
@@ -170,13 +265,6 @@ These logs allow you to trace **tool usage**, **LLM decisions**, and **outputs**
 - `ALLOWED_ROOTS` defines directories where MCP tools can access files (`data/xml`, `data/out`, `data/logos` by default).
 - Any path outside of these roots will be **blocked** for safety.
 - Logs may contain sensitive invoice data -> review before sharing.
-
-## 📚 References
-
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Anthropic API Docs](https://docs.anthropic.com/en/api)
-- [Antrhopic Build an MCP Server](https://modelcontextprotocol.io/quickstart/server)
-- [JSON-RPC 2.0](https://www.jsonrpc.org/)
 
 ## 🖥️ Using with Claude Desktop + MCP
 
@@ -227,6 +315,14 @@ Stop-Process -Name "Claude" -Force; Start-Process "<absolute_path>\Claude.exe"
 
 Here `<absolute_path>\Claude.exe` should be replaced with the full path to your Claude installation, for example:
 `C:\Users\<username>\AppData\Local\AnthropicClaude\Claude.exe`
+
+## 📚 References
+
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [Anthropic API Docs](https://docs.anthropic.com/en/api)
+- [Antrhopic Build an MCP Server](https://modelcontextprotocol.io/quickstart/server)
+- [JSON-RPC 2.0](https://www.jsonrpc.org/)
+- [Overwatch API](https://github.com/TeKrop/overfast-api)
 
 ## 🎬 Test Example
 
