@@ -33,21 +33,19 @@ def listGameModes(locale: Optional[str] = None) -> List[Dict[str, Any]]:
 
 def listRegions(locale: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Fetch all available regions.
-    Docs: https://overfast-api.tekrop.fr/#tag/Regions/operation/list_regions
+    Return static Battle.net API regions (not provided by OverFast).
+    Source: Blizzard regionality guide.
     """
-    params: Dict[str, Any] = {}
-    if locale:
-        params["locale"] = locale
-    data = get("/regions", params=params)
-
-    return [
-        {
-            "key": r.get("key"),
-            "name": r.get("name"),
-        }
-        for r in data
+    # Minimal, stable set
+    data = [
+        {"key": "us",   "name": "North America", "locales": ["en_US", "es_MX", "pt_BR", "fr_CA"]},
+        {"key": "eu",   "name": "Europe",        "locales": ["en_GB", "es_ES", "fr_FR", "de_DE", "it_IT", "pt_PT", "ru_RU"]},
+        {"key": "asia", "name": "Asia",          "locales": ["ko_KR", "zh_TW", "zh_CN", "ja_JP", "en_GB"]},
     ]
+    # Optional: filter by locale if provided
+    if locale:
+        return [r for r in data if locale in r["locales"]]
+    return [{ "key": r["key"], "name": r["name"] } for r in data]
 
 def listRoles(locale: Optional[str] = None) -> List[Dict[str, Any]]:
     """
