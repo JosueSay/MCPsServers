@@ -34,33 +34,47 @@ It includes a custom **FEL MCP server** that validates and renders **Guatemalan 
 
 ## 🔧 Installation
 
-```bash
-# Clone the repository
-git clone <repo-url>
-cd <repo-name>
+When starting the chatbot, you can now run **multiple MCP servers at the same time**.  
+This allows you to combine local tools (e.g., FEL) with external integrations like **Filesystem** and **GitHub**.
 
-# Create and activate a virtual environment
-python3.12 -m venv venv
-source venv/bin/activate
+### Environment Variables
 
-# Install dependencies
-pip install -r requirements.txt
-```
-
-Copy the environment example and configure your Anthropic API key:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and set:
+Edit your `.env` with the following variables:
 
 ```env
+# ---- Keys ----
 ANTHROPIC_API_KEY=your_key
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
-LOG_DIR=./logs/sessions
-MCP_FEL_CMD=python servers/fel_mcp_server/server_stdio.py
+ANTHROPIC_MODEL=claude-sonnet-4-20250514 # optional, other models: https://docs.anthropic.com/en/api/models-list
+GITHUB_TOKEN=your_token # Personal Access Token (fine-grained or classic)
+
+# ---- MCPS ----
+MCP_FEL_CMD="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py"
+MCP_URL=url_mcp # pending
+
+# Multiple MCP servers (comma-separated)
+# Recommended order: FEL (local), Filesystem (Docker), GitHub (Docker)
+MCP_CMDS="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py,docker run --rm -i -v /ABSOLUTE/PATH/data/testing:/data node:22 npx -y @modelcontextprotocol/server-filesystem /data,docker run --rm -i -e GITHUB_TOKEN node:22 npx -y @modelcontextprotocol/server-github"
+
+# ---- Chat Config ----
+LOG_DIR=/ABSOLUTE/PATH/TO/REPO/data/logs/sessions
+ROUTER_DEBUG=0 # 1: active | 0: inactive
 ```
+
+### GitHub MCP
+
+To use the **GitHub MCP** you need:
+
+1. Create a **personal token** (fine-grained or classic).
+
+2. Clone the official MCP servers repository to an absolute path:
+
+   ```bash
+   git clone https://github.com/modelcontextprotocol/servers.git
+   ```
+
+3. Replace `/ABSOLUTE/PATH/servers` in your `.env` with the actual path to the cloned repo.
+
+This way, the chatbot can launch and orchestrate multiple MCPs in parallel.
 
 ## 🚀 Usage
 
@@ -100,6 +114,10 @@ La validación de la factura fue exitosa. Los totales calculados son:
 
 No se encontraron errores en los precios ni en los campos requeridos.
 ```
+
+If absolute paths for the official MCP servers were set, you can now have more tools available: **FEL + System Files + GitHub**.
+
+![Official MCP Tools in Action](./images/mcp_tools.png)
 
 ## 🗂 Project Structure
 
@@ -214,5 +232,3 @@ Here `<absolute_path>\Claude.exe` should be replaced with the full path to your 
 
 - [Watch the video with my chatbot](https://youtu.be/RaGJxHGllNY)
 - [Watch the video with Claude Desktop](https://youtu.be/_vuhF7jKm1M)
-
-![Official MCP Tools in Action](./images/image.png)
