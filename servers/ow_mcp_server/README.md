@@ -186,6 +186,8 @@ curl -s http://localhost:8080/mcp \
   -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"ow_get_player_stats","arguments":{"playerId":"YSE#11202","platform":"pc","gamemode":"quickplay"}}}' | jq
 ```
 
+> **Note:** After deploying the file using the base from the [MCP repository](https://github.com/JosueSay/MCPLocalFEL), make sure to replace `http://localhost:8080/mcp` with the public URL provided after deployment, so you can test the same MCP from OW Stats.
+>
 ## 7. File Structure
 
 ```bash
