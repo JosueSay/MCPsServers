@@ -44,7 +44,7 @@ from core.engine import ChatEngine
 from core.settings import (
     API_KEY,
     MODEL,
-    LOG_DIR,
+    LOG_SESSION,
     ROUTER_DEBUG,
     SYSTEM_PROMPT,
     ALLOWED_ROOTS,
@@ -59,10 +59,8 @@ if not API_KEY:
     console.print("[red]Missing ANTHROPIC_API_KEY[/red]")
     sys.exit(1)
 
-# Create a per-session JSONL log file
-os.makedirs(LOG_DIR, exist_ok=True)
 sessionId = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
-logPath = os.path.join(LOG_DIR, f"{sessionId}.jsonl")
+logPath = os.path.join(LOG_SESSION, f"{sessionId}.jsonl")
 
 
 def logEvent(event: dict) -> None:

@@ -38,7 +38,10 @@ MCP_FEL_CMD: str = os.getenv("MCP_FEL_CMD", "python servers/fel_mcp_server/serve
 MCP_URL: str = os.getenv("MCP_URL", "")
 
 # Logs directory (the CLI will create per-session JSONL files here)
-LOG_DIR: str = os.getenv("LOG_DIR", "./logs/sessions")
+LOG_SESSION: str = os.getenv("LOG_SESSION", "./logs/sessions")
+LOG_RPC = os.getenv("LOG_RPC", "./logs/rpc")
+os.makedirs(LOG_SESSION, exist_ok=True)
+os.makedirs(LOG_RPC, exist_ok=True)
 
 # Show router/tool traces in the UI
 ROUTER_DEBUG: bool = envBool("ROUTER_DEBUG", True)
@@ -69,7 +72,7 @@ __all__ = [
     "MCP_FEL_CMD",
     "MCP_URL",
     "MCP_CMDS",
-    "LOG_DIR",
+    "LOG_SESSION",
     "ROUTER_DEBUG",
     "SYSTEM_PROMPT",
     "ALLOWED_ROOTS",

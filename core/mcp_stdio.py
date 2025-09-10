@@ -4,7 +4,7 @@ import threading
 import queue
 import time
 from typing import Any, Optional
-
+from .rpc_logger import logRPC
 
 class McpStdioClient:
     """
@@ -91,13 +91,37 @@ class McpStdioClient:
 
     def rpc(self, payload: dict[str, Any]) -> dict[str, Any]:
         """
-        Write one JSON-RPC request and wait until a response with the same 'id' arrives.
-        Non-JSON lines and mismatched ids are ignored.
+        Send a single JSON-RPC request to the MCP server (via stdio) and wait for the response.
+
+        Behavior:
+        ---------
+        • Logs the outgoing request with logRPC("send", payload).
+        • Writes the request to the server's stdin.
+        • Reads lines from the server's stdout until a valid JSON response with the same 'id' is found.
+        • Logs each valid JSON line received with logRPC("recv", data).
+        • Non-JSON lines or messages with mismatched 'id' are ignored, allowing the server to emit diagnostics.
+
+        Parameters:
+        -----------
+        payload : dict
+            The JSON-RPC request object, including "jsonrpc", "id", "method", and optional "params".
+
+        Returns:
+        --------
+        dict
+            The JSON-RPC response object matching the request 'id'.
 
         Raises:
-            TimeoutError: if no matching response arrives within startupTimeoutSec.
+        -------
+        TimeoutError
+            If no valid response is received within the configured startupTimeoutSec.
         """
         assert self.proc and self.proc.stdin
+
+        # Log outgoing request
+        logRPC("send", payload)
+
+        # Send request to the MCP server
         self.proc.stdin.write(json.dumps(payload) + "\n")
         self.proc.stdin.flush()
 
@@ -112,17 +136,19 @@ class McpStdioClient:
             if not line:
                 continue
 
-            # Ignore non-JSON or stray lines
             try:
                 data = json.loads(line)
             except json.JSONDecodeError:
+                # Ignore non-JSON lines
                 continue
+
+            # Log all valid JSON messages
+            logRPC("recv", data)
 
             if data.get("id") == payload.get("id"):
                 return data
 
         raise TimeoutError("MCP server did not respond on time.")
-
 
 def prettyJsonFromMcpResult(result: dict[str, Any]) -> str:
     """
