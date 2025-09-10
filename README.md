@@ -63,7 +63,8 @@ MCP_URL=https://ow-mcp-server-XXXXXX.run.app/mcp # Your Overwatch MCP cloud URL
 MCP_CMDS="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py,docker run --rm -i -v /ABSOLUTE/PATH/data/testing:/data node:22 npx -y @modelcontextprotocol/server-filesystem /data,docker run --rm -i -e GITHUB_TOKEN node:22 npx -y @modelcontextprotocol/server-github"
 
 # ---- Chat Config ----
-LOG_DIR=/ABSOLUTE/PATH/TO/REPO/data/logs/sessions
+LOG_SESSION=/ABSOLUTE/PATH/TO/REPO/data/logs/sessions
+LOG_RPC=/ABSOLUTE/PATH/TO/REPO/data/logs/rpc
 ROUTER_DEBUG=0 # 1: active | 0: inactive
 ```
 

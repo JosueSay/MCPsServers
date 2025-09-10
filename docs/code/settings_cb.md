@@ -44,7 +44,8 @@
 * `MCP_FEL_CMD: str` -> command to launch the MCP **stdio server**
 
   Default: `"python servers/fel_mcp_server/server_stdio.py"`.
-* `LOG_DIR: str` -> folder for **session logs** (`"./logs/sessions"`).
+* `LOG_SESSION: str` -> folder for **session logs** (`"./logs/sessions"`).
+* `LOG_RPC: str` -> folder for **rpc logs** (`"./logs/rpc"`).
 * `ROUTER_DEBUG: bool` -> router/tool usage trace (`True` by default, via `envBool`).
 * `ALLOWED_ROOTS: list[str]` -> sandbox for tool file access (`"data/xml,data/out,data/logos"`, via `envList`).
 * `SYSTEM_PROMPT: str` -> system prompt for the LLM; if missing, uses embedded `_DEFAULT_PROMPT`.
@@ -63,7 +64,7 @@
 
 * **Keys:** do not commit `.env`; use `ANTHROPIC_API_KEY` in deployments.
 * **Sandbox:** keep `ALLOWED_ROOTS` restrictive to prevent reads/writes outside `data/*`.
-* **Logs:** `LOG_DIR` may contain sensitive data (invoices); review before sharing.
+* **Logs:** `LOG_SESSION` may contain sensitive data (invoices); review before sharing.
 
 ## Example `.env`
 
@@ -76,7 +77,8 @@ ANTHROPIC_MODEL=claude-sonnet-4-20250514
 MCP_FEL_CMD=python servers/fel_mcp_server/server_stdio.py
 
 # Logs and debugging
-LOG_DIR=./logs/sessions
+LOG_SESSION=./logs/sessions
+LOG_SESSION=./logs/rpc
 ROUTER_DEBUG=1
 
 # File sandbox

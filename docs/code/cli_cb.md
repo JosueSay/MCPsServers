@@ -7,7 +7,7 @@ Renders a **REPL**, delegates orchestration to `core.engine.ChatEngine`, and if 
 
 * Provide a minimal command-line interface.
 * List MCP tools, invoke them manually, or let the LLM choose automatically.
-* Record each session in **JSONL** under `LOG_DIR`.
+* Record each session in **JSONL** under `LOG_SESSION` and rpc in `LOG_RPC`.
 
 ## Key Dependencies
 
@@ -29,7 +29,7 @@ Renders a **REPL**, delegates orchestration to `core.engine.ChatEngine`, and if 
 
 ## Environment Variables Used
 
-From `core.settings`: `API_KEY`, `MODEL`, `MCP_FEL_CMD`, `LOG_DIR`, `ROUTER_DEBUG`, `SYSTEM_PROMPT`, `ALLOWED_ROOTS`.
+From `core.settings`: `API_KEY`, `MODEL`, `MCP_FEL_CMD`, `LOG_SESSION`, `LOG_RPC`, `ROUTER_DEBUG`, `SYSTEM_PROMPT`, `ALLOWED_ROOTS`.
 Program **fails fast** if `ANTHROPIC_API_KEY` is missing.
 
 ## Structure and Functions
@@ -111,7 +111,7 @@ Example events:
 * `{"type":"mcp_manual","tool":"fel_render","args":{...},"result":{...}}`
 * `{"type":"llm_auto","model": "...","input": "...","output": "..."}`
 
-Written to `LOG_DIR` and optionally rendered in the console.
+Written to `LOG_SESSION` and optionally rendered in the console.
 
 ## Errors and Handling
 

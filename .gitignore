@@ -1,6 +1,7 @@
 layer_analysis.md
 traffic_analysis.md
 unified.md
+*.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
