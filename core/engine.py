@@ -220,7 +220,7 @@ class ChatEngine:
 
     # ---------- main chat turn with native tool-use ----------
 
-    def chatTurn(self, history: list[dict], userText: str, maxHops: int = 3) -> dict[str, Any]:
+    def chatTurn(self, history: list[dict], userText: str, maxHops: int = 5) -> dict[str, Any]:
         """
         Perform one conversational turn with tool-use enabled.
 
@@ -334,7 +334,19 @@ class ChatEngine:
                 messages.append({"role": "assistant", "content": assistantParams})
                 messages.append({"role": "user", "content": resultsForModel})
                 # Small nudge: concise answer in user's language, no raw JSON
-                messages.append({"role": "user", "content": "Return one concise answer in the user's language; do not show raw JSON."})
+                last_user_text = next(
+                    (m["content"] for m in reversed(messages)
+                    if m.get("role") == "user" and isinstance(m.get("content"), str)),
+                    ""
+                )[:500]
+
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        "Return one concise answer in the SAME language as this user's text; "
+                        "do NOT show raw JSON.\n---\n" + last_user_text + "\n---"
+                    )
+                })    
                 continue
 
             # No tool request: finalize with aggregated text
@@ -342,7 +354,8 @@ class ChatEngine:
             if not finalText:
                 # 1) Language anchor: last user message
                 last_user_text = next(
-                    (m["content"] for m in reversed(messages) if m.get("role") == "user" and isinstance(m.get("content"), str)),
+                    (m["content"] for m in reversed(messages)
+                     if m.get("role") == "user" and isinstance(m.get("content"), str)),
                     ""
                 )[:500]  # no more than 500 chars
                 try:
@@ -370,7 +383,33 @@ class ChatEngine:
                     finalText = "\n".join([t for t in textBlocks if t]).strip()
                 except Exception:
                     pass
-            return {"finalText": finalText, "router": {"trace": trace}, "tools": {"calls": toolCalls}}
+
+                # 2) Deterministic fallback if still empty
+                if not finalText:
+                    lines = []
+                    for c in toolCalls:
+                        tool = c.get("tool", "tool")
+                        if "error" in c:
+                            lines.append(f"❌ {tool}: {c['error']}")
+                        else:
+                            out = ""
+                            r = c.get("result")
+                            if isinstance(r, dict):
+                                for k in ("pdf_path", "out_path", "path", "html_url",
+                                          "constructed_url", "repo_full_name"):
+                                    if k in r and r[k]:
+                                        out = f" → {r[k]}"
+                                        break
+                            lines.append(f"✅ {tool}{out}")
+                    if lines:
+                        finalText = "\n".join(lines)
+
+            return {
+                "finalText": finalText or "No textual answer was produced, but tools ran successfully.",
+                "router": {"trace": trace},
+                "tools": {"calls": toolCalls}
+            }
+
 
         # Safety exit if too many hops
-        return {"finalText": "(no answer)", "router": {"trace": trace}, "tools": {"calls": toolCalls}}
+        return {"finalText": "Done.", "router": {"trace": trace}, "tools": {"calls": toolCalls}}
