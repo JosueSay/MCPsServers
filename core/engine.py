@@ -305,6 +305,16 @@ class ChatEngine:
                             raise ValueError(f"Unknown tool: {toolName}")
                         rawResp = cli.callTool(toolName, safeArgs)
                         parsed = parseTextBlock(rawResp)
+                        if (parsed is None) or (isinstance(parsed, str) and not parsed.strip()):
+                            resultsForModel.append({
+                                "type": "tool_result", "tool_use_id": toolUseId,
+                                "content": [{"type": "text", "text": json.dumps({"ok": False, "error": "empty tool response"})}],
+                                "is_error": True,
+                            })
+                            toolCalls.append({"tool": toolName, "arguments": safeArgs, "error": "empty tool response"})
+                            continue
+
+                        
 
                         resultsForModel.append({
                             "type": "tool_result",
@@ -328,7 +338,38 @@ class ChatEngine:
                 continue
 
             # No tool request: finalize with aggregated text
-            finalText = "\n".join([t for t in textBlocks if t]).strip() or "(no answer)"
+            finalText = "\n".join([t for t in textBlocks if t]).strip()
+            if not finalText:
+                # 1) Language anchor: last user message
+                last_user_text = next(
+                    (m["content"] for m in reversed(messages) if m.get("role") == "user" and isinstance(m.get("content"), str)),
+                    ""
+                )[:500]  # no more than 500 chars
+                try:
+                    resp2 = self.client.messages.create(
+                        model=self.model,
+                        max_tokens=400,
+                        tools=[],              # <- no tools
+                        tool_choice=None,
+                        messages=messages + [{
+                            "role": "user",
+                            "content":
+                                "Briefly summarize what the tools have done. "
+                                "Include exact URLs/paths and any textual errors. "
+                                "Be concise and DO NOT paste raw JSON.\n\n"
+                                "Respond in the SAME language as this user's text (do not repeat it):\n"
+                                f"---\n{last_user_text}\n---"
+                        }],
+                        temperature=0,
+                        system=self.systemPrompt,
+                    )
+                    textBlocks = [
+                        getattr(b, "text", "") for b in (resp2.content or [])
+                        if getattr(b, "type", None) == "text"
+                    ]
+                    finalText = "\n".join([t for t in textBlocks if t]).strip()
+                except Exception:
+                    pass
             return {"finalText": finalText, "router": {"trace": trace}, "tools": {"calls": toolCalls}}
 
         # Safety exit if too many hops

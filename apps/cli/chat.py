@@ -80,9 +80,23 @@ def readUserInput(prompt: str = "[bold cyan]You[/] › ") -> str:
     Read a single line from the console.
     Returns the special sentinel '__EXIT__' when user types /exit or /quit.
     """
-    s = console.input(prompt).strip()
-    if s in ("/quit", "/exit"):
+    s = console.input(prompt)
+    if s.strip() in ("/quit", "/exit"):
         return "__EXIT__"
+    # Modo pegado multilínea
+    if s.strip() in ("/paste", "/ml"):
+        console.print("[dim]Paste your block and end with a line 'EOF'[/dim]")
+        lines = []
+        while True:
+            line = console.input("")
+            if line.strip() == "EOF":
+                break
+            lines.append(line.rstrip("\n"))
+        text = "\n".join(lines).strip()
+        return "__EMPTY__" if not text else text
+    s = s.strip()
+    if not s:
+        return "__EMPTY__"
     return s
 
 
@@ -105,9 +119,11 @@ def main() -> None:
     """Interactive console loop that delegates orchestration to ChatEngine."""
     console.rule("[bold]Claude Console + MCP (FEL)")
     console.print(
-        "[dim]commands: /exit | /clear | /tools | "
-        "fel_validate <xml> | fel_render <xml> [logo] [theme] [out] | fel_batch <dir_xml> [out_dir][/dim]"
+        "[dim]commands: /exit | /clear | /tools | /paste "
+        "| fel_validate <xml> | fel_render <xml> [logo] [theme] [out] "
+        "| fel_batch <dir_xml> [out_dir][/dim]"
     )
+
 
     # UI-agnostic engine (safe to reuse for Web later)
     engine = ChatEngine(
@@ -128,7 +144,7 @@ def main() -> None:
     try:
         # read lines until the sentinel is returned
         for user in iter(readUserInput, "__EXIT__"):
-            if not user:
+            if user == "__EMPTY__":
                 continue
 
             # Utilities

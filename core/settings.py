@@ -59,7 +59,7 @@ _DEFAULT_PROMPT = (
     "When validating FEL invoices, summarize totals and any issues. "
     "When using filesystem tools, always prefer them for file or directory operations. "
     "When using GitHub tools, always prefer them for repository queries. "
-    "Never answer directly if a relevant MCP tool exists."
+    "Prefer MCP tools when relevant, but ALWAYS include a brief human-readable summary of the result (URLs, paths, totals, or explicit error)."
 )
 SYSTEM_PROMPT: str = os.getenv("SYSTEM_PROMPT", _DEFAULT_PROMPT)
 

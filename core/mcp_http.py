@@ -52,7 +52,7 @@ class McpHttpClient:
 
         # Raise error if JSON-RPC returned an "error" object
         if "error" in data:
-            raise RuntimeError(data["error"])
+            raise RuntimeError(json.dumps(data["error"], ensure_ascii=False))
         return data["result"]
 
     def start(self):

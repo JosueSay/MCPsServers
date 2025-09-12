@@ -52,7 +52,7 @@ Edit your `.env` with the following variables:
 # ---- Keys ----
 ANTHROPIC_API_KEY=your_key
 ANTHROPIC_MODEL=claude-sonnet-4-20250514 # optional, other models: https://docs.anthropic.com/en/api/models-list
-GITHUB_TOKEN=your_token # Personal Access Token (fine-grained or classic)
+GITHUB_PERSONAL_ACCESS_TOKEN=your_token # Personal Access Token (fine-grained or classic)
 
 # ---- MCPS ----
 MCP_FEL_CMD="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py"
@@ -60,7 +60,7 @@ MCP_URL=https://ow-mcp-server-XXXXXX.run.app/mcp # Your Overwatch MCP cloud URL
 
 # Multiple MCPs (comma-separated)
 # Recommended order: FEL (local), Filesystem (Docker), GitHub (Docker)
-MCP_CMDS="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py,docker run --rm -i -v /ABSOLUTE/PATH/data/testing:/data node:22 npx -y @modelcontextprotocol/server-filesystem /data,docker run --rm -i -e GITHUB_TOKEN node:22 npx -y @modelcontextprotocol/server-github"
+MCP_CMDS="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py,docker run --rm -i -v /ABSOLUTE/PATH/data/testing:/data node:22 npx -y @modelcontextprotocol/server-filesystem /data,docker run --rm -i -e GITHUB_PERSONAL_ACCESS_TOKEN node:22 npx -y @modelcontextprotocol/server-github"
 
 # ---- Chat Config ----
 LOG_SESSION=/ABSOLUTE/PATH/TO/REPO/data/logs/sessions
@@ -96,7 +96,7 @@ You will see something like:
 
 ```bash
 ───────────────────── Claude Console + MCP (FEL + Overwatch) ──────────────────────
-commands: /exit | /clear | /tools
+commands: /exit | /clear | /tools | /paste | fel_validate <xml> | fel_render <xml>    | fel_batch <dir_xml>
 You ›
 ```
 
